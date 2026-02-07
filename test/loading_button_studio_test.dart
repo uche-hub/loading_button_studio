@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:loading_button_studio/loading_button_studio.dart';
+import 'package:loading_button_studio/button_loading_fx.dart';
 
 void main() {
   test('adds one to input values', () {
