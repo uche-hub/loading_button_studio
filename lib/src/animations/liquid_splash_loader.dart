@@ -125,7 +125,7 @@ class _LiquidSplashPainter extends CustomPainter {
     final opacity = math.sin(progress * math.pi);
 
     final paint = Paint()
-      ..color = color.withOpacity(opacity * 0.8)
+      ..color = color.withValues(alpha: opacity * 0.8)
       ..style = PaintingStyle.fill;
 
     // Draw water droplet shape
@@ -171,7 +171,7 @@ class _LiquidSplashPainter extends CustomPainter {
 
     // Add highlight
     final highlightPaint = Paint()
-      ..color = Colors.white.withOpacity(opacity * 0.4)
+      ..color = Colors.white.withValues(alpha: opacity * 0.4)
       ..style = PaintingStyle.fill;
     
     canvas.drawCircle(
