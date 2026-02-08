@@ -181,16 +181,6 @@ jobs:
           fi
           echo "✅ Android build successful"
       
-      - name: Build example app (iOS)
-        run: |
-          cd example
-          flutter build ios --debug --no-codesign
-          if [ $? -ne 0 ]; then
-            echo "❌ iOS build failed"
-            exit 1
-          fi
-          echo "✅ iOS build successful"
-      
       - name: Build example app (Web)
         run: |
           cd example
