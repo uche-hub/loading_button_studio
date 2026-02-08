@@ -4,9 +4,9 @@ import 'animations/pulsing_loader.dart';
 import 'animations/liquid_splash_loader.dart';
 
 /// A customizable loading indicator widget for buttons with multiple animation effects
-/// 
+///
 /// Use this widget inside your button's child when showing a loading state.
-/// 
+///
 /// Example:
 /// ```dart
 /// ElevatedButton(
@@ -22,16 +22,16 @@ import 'animations/liquid_splash_loader.dart';
 class LoadingButtonStudio extends StatelessWidget {
   /// The animation effect to use
   final ButtonAnimationEffect animation;
-  
+
   /// Color of the animation effect
   final Color effectColor;
-  
+
   /// Stroke width for animations that use strokes
   final double strokeWidth;
-  
+
   /// Size of the loading indicator
   final double size;
-  
+
   /// Duration of one animation cycle
   final Duration? duration;
 
@@ -54,7 +54,7 @@ class LoadingButtonStudio extends StatelessWidget {
           size: size,
           duration: duration ?? const Duration(milliseconds: 1200),
         );
-      
+
       case ButtonAnimationEffect.liquidSplash:
         return LiquidSplashLoader(
           effectColor: effectColor,

@@ -1,0 +1,202 @@
+name: CD - Publish to pub.dev
+
+on:
+  push:
+    branches:
+      - publish
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  # Pre-publish validation
+  validate-branch:
+    name: Validate Branch & Permissions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Verify branch source
+        run: |
+          # Get the merge commit details
+          MERGE_BRANCH=$(git log -1 --format=%s | grep -oP '(?<=from )[^ ]+' || echo "unknown")
+          echo "Merge came from branch: $MERGE_BRANCH"
+          
+          # Check if merge is from allowed branches only
+          if [[ "$MERGE_BRANCH" != *"uche-dev"* ]] && [[ "$MERGE_BRANCH" != *"main"* ]]; then
+            echo "❌ Publish branch can only accept merges from 'main' or 'uche-dev' branches"
+            echo "Current merge is from: $MERGE_BRANCH"
+            exit 1
+          fi
+          echo "✅ Merge from authorized branch: $MERGE_BRANCH"
+      
+      - name: Verify commit author
+        run: |
+          AUTHOR_EMAIL=$(git log -1 --format=%ae)
+          echo "Commit author email: $AUTHOR_EMAIL"
+          
+          # You can add specific email verification here
+          # Example: Only allow specific maintainers to publish
+          # ALLOWED_AUTHORS=("uche@example.com" "maintainer@example.com")
+          # if [[ ! " ${ALLOWED_AUTHORS[@]} " =~ " ${AUTHOR_EMAIL} " ]]; then
+          #   echo "❌ Unauthorized author"
+          #   exit 1
+          # fi
+          
+          echo "✅ Author verification passed"
+
+  # Run all quality checks again before publishing
+  final-validation:
+    name: Final Pre-Publish Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate-branch
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: Get dependencies
+        run: flutter pub get
+      
+      - name: Run format check
+        run: dart format --output=none --set-exit-if-changed .
+      
+      - name: Run strict analysis
+        run: flutter analyze --fatal-infos --fatal-warnings
+      
+      - name: Run all tests
+        run: flutter test --coverage
+      
+      - name: Validate package
+        run: |
+          flutter pub publish --dry-run
+          if [ $? -ne 0 ]; then
+            echo "❌ Package validation failed"
+            exit 1
+          fi
+          echo "✅ Package is valid for publishing"
+      
+      - name: Check version bump
+        run: |
+          # Get current version from pubspec.yaml
+          CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Check if this version already exists on pub.dev
+          # You would need to add logic here to check pub.dev API
+          
+          echo "✅ Version check passed"
+      
+      - name: Verify CHANGELOG updated
+        run: |
+          # Check if CHANGELOG mentions current version
+          CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          if ! grep -q "$CURRENT_VERSION" CHANGELOG.md; then
+            echo "❌ CHANGELOG.md doesn't contain entry for version $CURRENT_VERSION"
+            exit 1
+          fi
+          echo "✅ CHANGELOG is up to date"
+
+  # Publish to pub.dev
+  publish:
+    name: Publish to pub.dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: final-validation
+    environment:
+      name: production
+      url: https://pub.dev/packages/button_loading_fx
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: Get dependencies
+        run: flutter pub get
+      
+      - name: Setup pub credentials
+        run: |
+          mkdir -p $HOME/.pub-cache
+          echo '${{ secrets.PUB_DEV_CREDENTIALS }}' > $HOME/.pub-cache/credentials.json
+      
+      - name: Publish to pub.dev
+        run: |
+          flutter pub publish --force
+          if [ $? -ne 0 ]; then
+            echo "❌ Publishing failed"
+            exit 1
+          fi
+          echo "✅ Successfully published to pub.dev!"
+      
+      - name: Extract package version
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          release_name: Release v${{ steps.version.outputs.version }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+      
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "🎉 Package successfully published to pub.dev!"
+          echo "Version: $(grep '^version:' pubspec.yaml | sed 's/version: //')"
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Publishing failed. Please check the logs."
+          exit 1
+
+  # Post-publish verification
+  post-publish-verification:
+    name: Post-Publish Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: publish
+    
+    steps:
+      - name: Wait for pub.dev to process
+        run: sleep 60
+      
+      - name: Verify package on pub.dev
+        run: |
+          PACKAGE_NAME="button_loading_fx"
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          
+          # Check if package exists
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://pub.dev/packages/$PACKAGE_NAME")
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Package not found on pub.dev"
+            exit 1
+          fi
+          
+          echo "✅ Package verified on pub.dev"

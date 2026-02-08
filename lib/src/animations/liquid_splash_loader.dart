@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 class LiquidSplashLoader extends StatefulWidget {
   /// Color of the liquid splash
   final Color effectColor;
-  
+
   /// Stroke width (not used but kept for API consistency)
   final double strokeWidth;
-  
+
   /// Duration of one splash cycle
   final Duration duration;
-  
+
   /// Size of the loader
   final double size;
 
@@ -34,10 +34,7 @@ class _LiquidSplashLoaderState extends State<LiquidSplashLoader>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
     _controller.repeat();
   }
 
@@ -71,10 +68,8 @@ class _LiquidSplashPainter extends CustomPainter {
   final Animation<double> animation;
   final Color color;
 
-  _LiquidSplashPainter({
-    required this.animation,
-    required this.color,
-  }) : super(repaint: animation);
+  _LiquidSplashPainter({required this.animation, required this.color})
+    : super(repaint: animation);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -86,7 +81,7 @@ class _LiquidSplashPainter extends CustomPainter {
     for (int i = 0; i < 3; i++) {
       final phaseOffset = i / 3.0;
       final phaseProgress = (progress + phaseOffset) % 1.0;
-      
+
       _drawDroplet(
         canvas,
         center,
@@ -106,12 +101,12 @@ class _LiquidSplashPainter extends CustomPainter {
   ) {
     // Calculate droplet position and size based on progress
     final angle = rotationDegrees * math.pi / 180;
-    
+
     // Droplet rises and falls
     final yOffset = math.sin(progress * math.pi) * radius * 0.6;
     final xOffset = math.cos(angle) * radius * 0.3;
     final yRotation = math.sin(angle) * radius * 0.3;
-    
+
     final dropletCenter = Offset(
       center.dx + xOffset,
       center.dy - yOffset + yRotation,
@@ -130,10 +125,10 @@ class _LiquidSplashPainter extends CustomPainter {
 
     // Draw water droplet shape
     final path = Path();
-    
+
     // Top point of droplet
     path.moveTo(dropletCenter.dx, dropletCenter.dy - dropletRadius);
-    
+
     // Right curve
     path.quadraticBezierTo(
       dropletCenter.dx + dropletRadius * 0.7,
@@ -141,7 +136,7 @@ class _LiquidSplashPainter extends CustomPainter {
       dropletCenter.dx + dropletRadius * 0.5,
       dropletCenter.dy + dropletRadius * 0.3,
     );
-    
+
     // Bottom right
     path.quadraticBezierTo(
       dropletCenter.dx + dropletRadius * 0.3,
@@ -149,7 +144,7 @@ class _LiquidSplashPainter extends CustomPainter {
       dropletCenter.dx,
       dropletCenter.dy + dropletRadius * 0.8,
     );
-    
+
     // Bottom left
     path.quadraticBezierTo(
       dropletCenter.dx - dropletRadius * 0.3,
@@ -157,7 +152,7 @@ class _LiquidSplashPainter extends CustomPainter {
       dropletCenter.dx - dropletRadius * 0.5,
       dropletCenter.dy + dropletRadius * 0.3,
     );
-    
+
     // Left curve
     path.quadraticBezierTo(
       dropletCenter.dx - dropletRadius * 0.7,
@@ -165,7 +160,7 @@ class _LiquidSplashPainter extends CustomPainter {
       dropletCenter.dx,
       dropletCenter.dy - dropletRadius,
     );
-    
+
     path.close();
     canvas.drawPath(path, paint);
 
@@ -173,7 +168,7 @@ class _LiquidSplashPainter extends CustomPainter {
     final highlightPaint = Paint()
       ..color = Colors.white.withValues(alpha: opacity * 0.4)
       ..style = PaintingStyle.fill;
-    
+
     canvas.drawCircle(
       Offset(
         dropletCenter.dx - dropletRadius * 0.2,

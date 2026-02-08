@@ -1,0 +1,321 @@
+name: CI - Pull Request Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+      - uche-dev
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Job 1: Code Quality Checks
+  code-quality:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: Get dependencies
+        run: flutter pub get
+      
+      - name: Verify pubspec.yaml
+        run: |
+          if ! flutter pub publish --dry-run > /dev/null 2>&1; then
+            echo "❌ pubspec.yaml is invalid"
+            exit 1
+          fi
+          echo "✅ pubspec.yaml is valid"
+      
+      - name: Check formatting
+        run: |
+          OUTPUT=$(dart format --output=none --set-exit-if-changed .)
+          if [ $? -ne 0 ]; then
+            echo "❌ Code is not formatted. Run 'dart format .'"
+            echo "$OUTPUT"
+            exit 1
+          fi
+          echo "✅ Code formatting is correct"
+      
+      - name: Analyze code (STRICT MODE)
+        run: |
+          echo "Running strict analysis..."
+          flutter analyze --fatal-infos --fatal-warnings
+          if [ $? -ne 0 ]; then
+            echo "❌ Code analysis failed with errors or warnings"
+            exit 1
+          fi
+          echo "✅ No errors, warnings, or infos found"
+      
+      - name: Check for deprecated API usage
+        run: |
+          echo "Checking for deprecated code..."
+          DEPRECATED=$(grep -r "@deprecated\|@Deprecated" lib/ || true)
+          if [ -n "$DEPRECATED" ]; then
+            echo "⚠️  Deprecated code found:"
+            echo "$DEPRECATED"
+          fi
+          
+          # Check if code uses any deprecated Flutter APIs
+          DEPRECATED_USAGE=$(grep -r "\/\/.*deprecated\|\/\*.*deprecated" lib/ || true)
+          if [ -n "$DEPRECATED_USAGE" ]; then
+            echo "❌ Usage of deprecated APIs detected"
+            echo "$DEPRECATED_USAGE"
+            exit 1
+          fi
+          echo "✅ No deprecated API usage found"
+      
+      - name: Run custom lint rules
+        run: |
+          echo "Checking for common issues..."
+          
+          # Check for print statements (should use proper logging)
+          if grep -r "print(" lib/; then
+            echo "❌ Found print() statements. Use proper logging instead"
+            exit 1
+          fi
+          
+          # Check for TODO comments
+          if grep -r "TODO\|FIXME\|HACK" lib/; then
+            echo "❌ Found TODO/FIXME/HACK comments. Please resolve before merging"
+            exit 1
+          fi
+          
+          # Check for debugPrint in production code
+          if grep -r "debugPrint" lib/; then
+            echo "❌ Found debugPrint statements"
+            exit 1
+          fi
+          
+          echo "✅ No common issues found"
+
+  # Job 2: Testing
+  testing:
+    name: Unit & Widget Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: code-quality
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: Get dependencies
+        run: flutter pub get
+      
+      - name: Run tests with coverage
+        run: |
+          flutter test --coverage --reporter=expanded
+          if [ $? -ne 0 ]; then
+            echo "❌ Tests failed"
+            exit 1
+          fi
+          echo "✅ All tests passed"
+      
+      - name: Check test coverage
+        run: |
+          # Install lcov for coverage reporting
+          sudo apt-get install -y lcov
+          
+          # Generate coverage report
+          genhtml coverage/lcov.info -o coverage/html
+          
+          # Check coverage percentage (optional: enforce minimum coverage)
+          COVERAGE=$(lcov --summary coverage/lcov.info 2>&1 | grep "lines" | awk '{print $2}' | sed 's/%//')
+          echo "Test Coverage: $COVERAGE%"
+          
+          # Enforce minimum 70% coverage
+          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "❌ Coverage is below 70% ($COVERAGE%)"
+            exit 1
+          fi
+          echo "✅ Coverage is sufficient ($COVERAGE%)"
+
+  # Job 3: Build Validation
+  build-validation:
+    name: Build Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: code-quality
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: Get dependencies
+        run: flutter pub get
+      
+      - name: Build example app (Android)
+        run: |
+          cd example
+          flutter build apk --debug
+          if [ $? -ne 0 ]; then
+            echo "❌ Android build failed"
+            exit 1
+          fi
+          echo "✅ Android build successful"
+      
+      - name: Build example app (iOS)
+        run: |
+          cd example
+          flutter build ios --debug --no-codesign
+          if [ $? -ne 0 ]; then
+            echo "❌ iOS build failed"
+            exit 1
+          fi
+          echo "✅ iOS build successful"
+      
+      - name: Build example app (Web)
+        run: |
+          cd example
+          flutter build web
+          if [ $? -ne 0 ]; then
+            echo "❌ Web build failed"
+            exit 1
+          fi
+          echo "✅ Web build successful"
+
+  # Job 4: Documentation Check
+  documentation:
+    name: Documentation Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: code-quality
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for required files
+        run: |
+          REQUIRED_FILES=("README.md" "CHANGELOG.md" "LICENSE" "pubspec.yaml")
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+          echo "✅ All required files present"
+      
+      - name: Validate README
+        run: |
+          # Check README has minimum content
+          if [ $(wc -l < README.md) -lt 20 ]; then
+            echo "❌ README.md is too short"
+            exit 1
+          fi
+          
+          # Check for broken links (basic check)
+          if grep -q "]()" README.md; then
+            echo "❌ Found empty links in README"
+            exit 1
+          fi
+          
+          echo "✅ README validation passed"
+      
+      - name: Validate CHANGELOG
+        run: |
+          if ! grep -q "^## " CHANGELOG.md; then
+            echo "❌ CHANGELOG.md doesn't follow proper format"
+            exit 1
+          fi
+          echo "✅ CHANGELOG validation passed"
+      
+      - name: Check API documentation
+        run: |
+          # Check that public APIs are documented
+          UNDOCUMENTED=$(grep -r "^class\|^enum\|^abstract" lib/src/*.dart lib/src/*/*.dart | grep -v "///" | grep -v "*.g.dart" || true)
+          if [ -n "$UNDOCUMENTED" ]; then
+            echo "⚠️  Found potentially undocumented public APIs:"
+            echo "$UNDOCUMENTED"
+            echo "Please add dartdoc comments (///) to all public APIs"
+          fi
+          echo "✅ Documentation check complete"
+
+  # Job 5: Security & Dependency Check
+  security:
+    name: Security & Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: code-quality
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: Check for outdated dependencies
+        run: |
+          flutter pub get
+          flutter pub outdated --mode=null-safety
+          echo "✅ Dependency check complete"
+      
+      - name: Check pubspec.lock
+        run: |
+          if [ ! -f "pubspec.lock" ]; then
+            echo "❌ pubspec.lock is missing"
+            exit 1
+          fi
+          echo "✅ pubspec.lock exists"
+      
+      - name: Scan for secrets
+        run: |
+          # Basic secret scanning
+          if grep -r "API_KEY\|SECRET\|PASSWORD\|TOKEN" lib/ --exclude="*.md"; then
+            echo "❌ Potential secrets found in code"
+            exit 1
+          fi
+          echo "✅ No secrets detected"
+
+  # Final approval summary
+  pr-validation-summary:
+    name: PR Validation Summary
+    runs-on: ubuntu-latest
+    needs: [code-quality, testing, build-validation, documentation, security]
+    if: always()
+    
+    steps:
+      - name: Check all jobs status
+        run: |
+          if [ "${{ needs.code-quality.result }}" != "success" ] || \
+             [ "${{ needs.testing.result }}" != "success" ] || \
+             [ "${{ needs.build-validation.result }}" != "success" ] || \
+             [ "${{ needs.documentation.result }}" != "success" ] || \
+             [ "${{ needs.security.result }}" != "success" ]; then
+            echo "❌ Some validation checks failed"
+            exit 1
+          fi
+          echo "✅ All validation checks passed!"
+          echo "PR is ready for review by maintainers"

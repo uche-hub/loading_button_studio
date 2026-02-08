@@ -1,0 +1,69 @@
+name: Branch Protection
+
+on:
+  pull_request:
+    branches:
+      - publish
+  push:
+    branches:
+      - publish
+
+jobs:
+  enforce-branch-rules:
+    name: Enforce Publish Branch Rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Block direct pushes to publish branch
+        if: github.event_name == 'push'
+        run: |
+          echo "❌ Direct pushes to 'publish' branch are not allowed!"
+          echo "Please merge from 'main' or 'uche-dev' branches only"
+          exit 1
+      
+      - name: Validate PR source branch
+        if: github.event_name == 'pull_request'
+        run: |
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          TARGET_BRANCH="${{ github.base_ref }}"
+          
+          echo "Source branch: $SOURCE_BRANCH"
+          echo "Target branch: $TARGET_BRANCH"
+          
+          # Only allow PRs from main or uche-dev to publish
+          if [ "$TARGET_BRANCH" == "publish" ]; then
+            if [ "$SOURCE_BRANCH" != "main" ] && [ "$SOURCE_BRANCH" != "uche-dev" ]; then
+              echo "❌ Pull requests to 'publish' branch are only allowed from 'main' or 'uche-dev'"
+              echo "Your PR is from: $SOURCE_BRANCH"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ Branch protection rules satisfied"
+      
+      - name: Check PR author permissions
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          echo "PR Author: $PR_AUTHOR"
+          
+          # Check if author is a maintainer
+          # This uses GitHub API to verify permissions
+          PERMISSION=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/collaborators/$PR_AUTHOR/permission" \
+            | jq -r '.permission')
+          
+          echo "User permission level: $PERMISSION"
+          
+          if [ "$PERMISSION" != "admin" ] && [ "$PERMISSION" != "write" ]; then
+            echo "⚠️  Warning: User does not have write permissions"
+            echo "Maintainer review required before merge"
+          fi

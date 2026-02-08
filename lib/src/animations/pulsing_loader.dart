@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 class PulsingLoader extends StatefulWidget {
   /// Color of the pulsing circles
   final Color effectColor;
-  
+
   /// Stroke width of the circles
   final double strokeWidth;
-  
+
   /// Duration of one pulse cycle
   final Duration duration;
-  
+
   /// Size of the loader
   final double size;
 
@@ -35,33 +35,28 @@ class _PulsingLoaderState extends State<PulsingLoader>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
 
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 50,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 50,
       ),
     ]).animate(_controller);
 
     _opacityAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.3, end: 1.0),
-        weight: 50,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.3),
-        weight: 50,
-      ),
+      TweenSequenceItem(tween: Tween<double>(begin: 0.3, end: 1.0), weight: 50),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 0.3), weight: 50),
     ]).animate(_controller);
 
     _controller.repeat();

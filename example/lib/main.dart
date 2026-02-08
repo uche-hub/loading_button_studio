@@ -37,10 +37,10 @@ class _DemoPageState extends State<DemoPage> {
   Future<void> _simulateAction(Function(bool) setLoading) async {
     setLoading(true);
     setState(() {});
-    
+
     // Simulate network request
     await Future.delayed(const Duration(seconds: 3));
-    
+
     setLoading(false);
     setState(() {});
   }
@@ -68,7 +68,7 @@ class _DemoPageState extends State<DemoPage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
-              
+
               // Pulsing Animation Example
               const Text(
                 'Pulsing Animation',
@@ -76,8 +76,8 @@ class _DemoPageState extends State<DemoPage> {
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: _isPulsingLoading 
-                    ? null 
+                onPressed: _isPulsingLoading
+                    ? null
                     : () => _simulateAction((v) => _isPulsingLoading = v),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -94,7 +94,7 @@ class _DemoPageState extends State<DemoPage> {
                     : const Text('Submit with Pulsing'),
               ),
               const SizedBox(height: 32),
-              
+
               // Liquid Splash Animation Example
               const Text(
                 'Liquid Splash Animation',
@@ -102,8 +102,8 @@ class _DemoPageState extends State<DemoPage> {
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: _isLiquidLoading 
-                    ? null 
+                onPressed: _isLiquidLoading
+                    ? null
                     : () => _simulateAction((v) => _isLiquidLoading = v),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
@@ -121,7 +121,7 @@ class _DemoPageState extends State<DemoPage> {
                     : const Text('Login with Liquid Splash'),
               ),
               const SizedBox(height: 32),
-              
+
               // Custom Color Example
               const Text(
                 'Custom Color & Duration',
@@ -129,8 +129,8 @@ class _DemoPageState extends State<DemoPage> {
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: _isCustomLoading 
-                    ? null 
+                onPressed: _isCustomLoading
+                    ? null
                     : () => _simulateAction((v) => _isCustomLoading = v),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -152,7 +152,7 @@ class _DemoPageState extends State<DemoPage> {
                       ),
               ),
               const SizedBox(height: 32),
-              
+
               // Text Button Example
               const Text(
                 'Text Button',
@@ -160,8 +160,8 @@ class _DemoPageState extends State<DemoPage> {
               ),
               const SizedBox(height: 12),
               TextButton(
-                onPressed: _isPulsingLoading 
-                    ? null 
+                onPressed: _isPulsingLoading
+                    ? null
                     : () => _simulateAction((v) => _isPulsingLoading = v),
                 child: _isPulsingLoading
                     ? const LoadingButtonStudio(
@@ -172,7 +172,7 @@ class _DemoPageState extends State<DemoPage> {
                     : const Text('Text Button with Loading'),
               ),
               const SizedBox(height: 32),
-              
+
               // Comparison with Default
               const Text(
                 'Comparison: Before & After',
@@ -230,8 +230,8 @@ class _DemoPageState extends State<DemoPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _isFabLoading 
-            ? null 
+        onPressed: _isFabLoading
+            ? null
             : () => _simulateAction((v) => _isFabLoading = v),
         tooltip: 'FAB with Loading',
         child: _isFabLoading
