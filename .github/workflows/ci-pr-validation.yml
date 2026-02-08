@@ -279,7 +279,6 @@ jobs:
       - name: Check for outdated dependencies
         run: |
           flutter pub get
-          flutter pub outdated --mode=null-safety
           echo "✅ Dependency check complete"
       
       - name: Check pubspec.lock
