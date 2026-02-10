@@ -1,5 +1,5 @@
-import 'package:button_loading_fx/button_loading_fx.dart';
 import 'package:flutter/material.dart';
+import 'package:button_loading_fx/button_loading_fx.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,20 +29,87 @@ class DemoPage extends StatefulWidget {
 }
 
 class _DemoPageState extends State<DemoPage> {
+  // Original animations state
   bool _isPulsingLoading = false;
   bool _isLiquidLoading = false;
-  bool _isCustomLoading = false;
   bool _isFabLoading = false;
+
+  // Progress button states
+  double? _downloadProgress;
+  double? _uploadProgress;
+  double? _customProgress;
 
   Future<void> _simulateAction(Function(bool) setLoading) async {
     setLoading(true);
     setState(() {});
 
-    // Simulate network request
     await Future.delayed(const Duration(seconds: 3));
 
     setLoading(false);
     setState(() {});
+  }
+
+  Future<void> _simulateDownload() async {
+    setState(() => _downloadProgress = 0.0);
+
+    // Simulate smooth download progress
+    for (double i = 0; i <= 1.0; i += 0.02) {
+      await Future.delayed(const Duration(milliseconds: 50));
+      if (mounted) {
+        setState(() => _downloadProgress = i);
+      }
+    }
+
+    // Ensure we hit 100%
+    setState(() => _downloadProgress = 1.0);
+
+    // Reset after completion
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      setState(() => _downloadProgress = null);
+    }
+  }
+
+  Future<void> _simulateUpload() async {
+    setState(() => _uploadProgress = 0.0);
+
+    // Simulate smooth upload progress
+    for (double i = 0; i <= 1.0; i += 0.01) {
+      await Future.delayed(const Duration(milliseconds: 30));
+      if (mounted) {
+        setState(() => _uploadProgress = i);
+      }
+    }
+
+    // Ensure we hit 100%
+    setState(() => _uploadProgress = 1.0);
+
+    // Reset after completion
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      setState(() => _uploadProgress = null);
+    }
+  }
+
+  Future<void> _simulateCustomProgress() async {
+    setState(() => _customProgress = 0.0);
+
+    // Simulate smooth custom progress
+    for (double i = 0; i <= 1.0; i += 0.015) {
+      await Future.delayed(const Duration(milliseconds: 40));
+      if (mounted) {
+        setState(() => _customProgress = i);
+      }
+    }
+
+    // Ensure we hit 100%
+    setState(() => _customProgress = 1.0);
+
+    // Reset after completion
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      setState(() => _customProgress = null);
+    }
   }
 
   @override
@@ -68,6 +135,125 @@ class _DemoPageState extends State<DemoPage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
+
+              // Animated Progress Buttons Section
+              const Text(
+                'Animated Progress Buttons',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue),
+              ),
+              const SizedBox(height: 16),
+
+              // Download Button with Progress
+              Center(
+                child: AnimatedProgressButton(
+                  progress: _downloadProgress,
+                  onPressed: _simulateDownload,
+                  backgroundColor: Colors.green,
+                  progressActiveColor: Colors.white,
+                  progressInactiveColor: Colors.green.shade200,
+                  height: 56,
+                  width: 220,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.download, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'Download File',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Upload Button with Progress
+              Center(
+                child: AnimatedProgressButton(
+                  progress: _uploadProgress,
+                  onPressed: _simulateUpload,
+                  backgroundColor: Colors.blue,
+                  progressActiveColor: Colors.blue,
+                  progressInactiveColor: Colors.grey.shade300,
+                  progressStrokeWidth: 5,
+                  height: 56,
+                  width: 220,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.cloud_upload, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'Upload Photo',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Custom Colored Progress Button
+              Center(
+                child: AnimatedProgressButton(
+                  progress: _customProgress,
+                  onPressed: _simulateCustomProgress,
+                  backgroundColor: Colors.orange,
+                  progressActiveColor: Colors.orange,
+                  progressInactiveColor: Colors.orange.shade100,
+                  progressStrokeWidth: 6,
+                  showPercentage: true,
+                  height: 60,
+                  width: 240,
+                  borderRadius: 30,
+                  percentageTextStyle: const TextStyle(
+                    color: Colors.orange,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.sync, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'Process Data',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+              const Divider(),
+              const SizedBox(height: 20),
+
+              // Original Animations Section
+              const Text(
+                'Original Loading Animations',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue),
+              ),
+              const SizedBox(height: 16),
 
               // Pulsing Animation Example
               const Text(
@@ -120,111 +306,8 @@ class _DemoPageState extends State<DemoPage> {
                       )
                     : const Text('Login with Liquid Splash'),
               ),
-              const SizedBox(height: 32),
 
-              // Custom Color Example
-              const Text(
-                'Custom Color & Duration',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: _isCustomLoading
-                    ? null
-                    : () => _simulateAction((v) => _isCustomLoading = v),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: const BorderSide(color: Colors.orange, width: 2),
-                ),
-                child: _isCustomLoading
-                    ? const SizedBox(
-                        height: 24,
-                        child: LoadingButtonStudio(
-                          animation: ButtonAnimationEffect.pulsing,
-                          effectColor: Colors.orange,
-                          size: 24,
-                          duration: Duration(milliseconds: 800),
-                        ),
-                      )
-                    : const Text(
-                        'Save with Custom Color',
-                        style: TextStyle(color: Colors.orange),
-                      ),
-              ),
-              const SizedBox(height: 32),
-
-              // Text Button Example
-              const Text(
-                'Text Button',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: _isPulsingLoading
-                    ? null
-                    : () => _simulateAction((v) => _isPulsingLoading = v),
-                child: _isPulsingLoading
-                    ? const LoadingButtonStudio(
-                        animation: ButtonAnimationEffect.liquidSplash,
-                        effectColor: Colors.deepPurple,
-                        size: 20,
-                      )
-                    : const Text('Text Button with Loading'),
-              ),
-              const SizedBox(height: 32),
-
-              // Comparison with Default
-              const Text(
-                'Comparison: Before & After',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              const Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          'Before (Default)',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: null,
-                          child: SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          'After (Loading FX)',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: null,
-                          child: LoadingButtonStudio(
-                            animation: ButtonAnimationEffect.pulsing,
-                            effectColor: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
