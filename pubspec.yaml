@@ -1,6 +1,6 @@
 name: button_loading_fx
 description: "A collection of beautiful, customizable loading animations for Flutter buttons. Features smooth pulsing, liquid splash, and more effects to enhance your UI."
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/uche-hub/loading_button_studio.git
 repository: https://github.com/uche-hub/loading_button_studio.git
 issue_tracker: https://github.com/uche-hub/loading_button_studio/issues
