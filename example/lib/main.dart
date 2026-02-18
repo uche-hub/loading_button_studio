@@ -1,5 +1,5 @@
-import 'package:button_loading_fx/button_loading_fx.dart';
 import 'package:flutter/material.dart';
+import 'package:button_loading_fx/button_loading_fx.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,20 +29,67 @@ class DemoPage extends StatefulWidget {
 }
 
 class _DemoPageState extends State<DemoPage> {
+  // Loading states for basic animations
   bool _isPulsingLoading = false;
   bool _isLiquidLoading = false;
-  bool _isCustomLoading = false;
-  bool _isFabLoading = false;
+  bool _isSpinnerLoading = false;
+  bool _isDotsLoading = false;
+
+  // Progress loader states
+  bool _isDownloading = false;
+  double _downloadProgress = 0.0;
+
+  bool _isUploading = false;
+  double _uploadProgress = 0.0;
 
   Future<void> _simulateAction(Function(bool) setLoading) async {
     setLoading(true);
     setState(() {});
 
-    // Simulate network request
     await Future.delayed(const Duration(seconds: 3));
 
     setLoading(false);
     setState(() {});
+  }
+
+  Future<void> _simulateDownload() async {
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0.0;
+    });
+
+    for (double i = 0; i <= 1.0; i += 0.02) {
+      await Future.delayed(const Duration(milliseconds: 50));
+      if (mounted) {
+        setState(() => _downloadProgress = i);
+      }
+    }
+
+    setState(() => _downloadProgress = 1.0);
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      setState(() => _isDownloading = false);
+    }
+  }
+
+  Future<void> _simulateUpload() async {
+    setState(() {
+      _isUploading = true;
+      _uploadProgress = 0.0;
+    });
+
+    for (double i = 0; i <= 1.0; i += 0.01) {
+      await Future.delayed(const Duration(milliseconds: 30));
+      if (mounted) {
+        setState(() => _uploadProgress = i);
+      }
+    }
+
+    setState(() => _uploadProgress = 1.0);
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      setState(() => _isUploading = false);
+    }
   }
 
   @override
@@ -50,31 +97,82 @@ class _DemoPageState extends State<DemoPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Button Loading FX Demo'),
+        title: const Text('Button Loading FX - All Loaders'),
       ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Button Loading FX Examples',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Button Loading FX',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '6 Beautiful Loaders',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
 
-              // Pulsing Animation Example
-              const Text(
-                'Pulsing Animation',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              // Progress-Based Loaders
+              _buildSectionTitle('Progress Loaders', '📊'),
+              const SizedBox(height: 16),
+
+              // Circular Progress
+              ElevatedButton(
+                onPressed: _isDownloading ? null : _simulateDownload,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isDownloading
+                    ? SizedBox(
+                        height: 28,
+                        child: LoadingButtonStudio(
+                          animation: ButtonAnimationEffect.circularProgress,
+                          progress: _downloadProgress,
+                          effectColor: Colors.white,
+                          inactiveColor: Colors.green.shade200,
+                          size: 28,
+                          strokeWidth: 3,
+                        ),
+                      )
+                    : const Text('Circular Progress'),
               ),
               const SizedBox(height: 12),
+
+              // Linear Progress
+              ElevatedButton(
+                onPressed: _isUploading ? null : _simulateUpload,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isUploading
+                    ? LoadingButtonStudio(
+                        animation: ButtonAnimationEffect.linearProgress,
+                        progress: _uploadProgress,
+                        effectColor: Colors.white,
+                        inactiveColor: Colors.blue.shade200,
+                        size: 20,
+                        strokeWidth: 2,
+                      )
+                    : const Text('Linear Progress'),
+              ),
+
+              const SizedBox(height: 32),
+              const Divider(),
+              const SizedBox(height: 24),
+
+              // Animated Loaders
+              _buildSectionTitle('Animated Loaders', '🎭'),
+              const SizedBox(height: 16),
+
+              // Pulsing
               ElevatedButton(
                 onPressed: _isPulsingLoading
                     ? null
@@ -91,16 +189,11 @@ class _DemoPageState extends State<DemoPage> {
                           size: 24,
                         ),
                       )
-                    : const Text('Submit with Pulsing'),
-              ),
-              const SizedBox(height: 32),
-
-              // Liquid Splash Animation Example
-              const Text(
-                'Liquid Splash Animation',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    : const Text('Pulsing'),
               ),
               const SizedBox(height: 12),
+
+              // Liquid Splash
               ElevatedButton(
                 onPressed: _isLiquidLoading
                     ? null
@@ -118,130 +211,83 @@ class _DemoPageState extends State<DemoPage> {
                           size: 24,
                         ),
                       )
-                    : const Text('Login with Liquid Splash'),
-              ),
-              const SizedBox(height: 32),
-
-              // Custom Color Example
-              const Text(
-                'Custom Color & Duration',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    : const Text('Liquid Splash'),
               ),
               const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: _isCustomLoading
+
+              // Spinner
+              ElevatedButton(
+                onPressed: _isSpinnerLoading
                     ? null
-                    : () => _simulateAction((v) => _isCustomLoading = v),
-                style: OutlinedButton.styleFrom(
+                    : () => _simulateAction((v) => _isSpinnerLoading = v),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: const BorderSide(color: Colors.orange, width: 2),
                 ),
-                child: _isCustomLoading
+                child: _isSpinnerLoading
                     ? const SizedBox(
                         height: 24,
                         child: LoadingButtonStudio(
-                          animation: ButtonAnimationEffect.pulsing,
-                          effectColor: Colors.orange,
+                          animation: ButtonAnimationEffect.spinner,
+                          effectColor: Colors.white,
                           size: 24,
-                          duration: Duration(milliseconds: 800),
                         ),
                       )
-                    : const Text(
-                        'Save with Custom Color',
-                        style: TextStyle(color: Colors.orange),
-                      ),
-              ),
-              const SizedBox(height: 32),
-
-              // Text Button Example
-              const Text(
-                'Text Button',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    : const Text('Spinner'),
               ),
               const SizedBox(height: 12),
-              TextButton(
-                onPressed: _isPulsingLoading
+
+              // Dots
+              ElevatedButton(
+                onPressed: _isDotsLoading
                     ? null
-                    : () => _simulateAction((v) => _isPulsingLoading = v),
-                child: _isPulsingLoading
-                    ? const LoadingButtonStudio(
-                        animation: ButtonAnimationEffect.liquidSplash,
-                        effectColor: Colors.deepPurple,
-                        size: 20,
+                    : () => _simulateAction((v) => _isDotsLoading = v),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isDotsLoading
+                    ? const SizedBox(
+                        height: 24,
+                        child: LoadingButtonStudio(
+                          animation: ButtonAnimationEffect.dots,
+                          effectColor: Colors.white,
+                          size: 24,
+                        ),
                       )
-                    : const Text('Text Button with Loading'),
+                    : const Text('Rotating Dots'),
               ),
-              const SizedBox(height: 32),
 
-              // Comparison with Default
+              const SizedBox(height: 32),
+              const Divider(),
+              const SizedBox(height: 16),
+
               const Text(
-                'Comparison: Before & After',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              const Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          'Before (Default)',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: null,
-                          child: SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          'After (Loading FX)',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: null,
-                          child: LoadingButtonStudio(
-                            animation: ButtonAnimationEffect.pulsing,
-                            effectColor: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                '💡 Tip: All loaders work with any button type!',
+                style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _isFabLoading
-            ? null
-            : () => _simulateAction((v) => _isFabLoading = v),
-        tooltip: 'FAB with Loading',
-        child: _isFabLoading
-            ? const LoadingButtonStudio(
-                animation: ButtonAnimationEffect.liquidSplash,
-                effectColor: Colors.white,
-                size: 28,
-              )
-            : const Icon(Icons.add),
-      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, String emoji) {
+    return Row(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 24)),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.blue,
+          ),
+        ),
+      ],
     );
   }
 }

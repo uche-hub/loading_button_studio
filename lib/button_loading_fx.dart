@@ -3,3 +3,5 @@ library;
 
 export 'src/loading_button_studio.dart';
 export 'src/enums/button_animation_effect.dart';
+export 'src/widgets/circular_progress_loader.dart';
+export 'src/animations/animated_progress_button.dart';
